@@ -1,0 +1,27 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/dist/
+
+# Mobile
+todoapp/build/
+todoapp/.dart_tool/
+todoapp/.flutter-plugins
+todoapp/.flutter-plugins-dependencies
+todoapp/ios/Pods/
+todoapp/android/.gradle/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+.env*
+!.env.example

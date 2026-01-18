@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install deps
+        run: cd backend && npm ci
+      - name: Lint
+        run: cd backend && npm run lint
+      - name: Tests
+        run: cd backend && npm test
+
+  todoapp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+      - name: Install deps
+        run: cd todoapp && flutter pub get
+      - name: Analyze
+        run: cd todoapp && flutter analyze
+      - name: Tests
+        run: cd todoapp && flutter test
