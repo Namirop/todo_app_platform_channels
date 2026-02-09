@@ -1,14 +1,71 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js" // ← Avant c'était juste "prisma-client"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  name         String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  ownedLists   List[]      @relation("ListOwner")
+  sharedLists  ListShare[]
+  todos        Todo[]
+
+  @@map("users")
+}
+
+model List {
+  id        String      @id @default(uuid())
+  name      String
+  ownerId   String      @map("owner_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  owner     User        @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  todos     Todo[]
+  shares    ListShare[]
+
+  @@map("lists")
+}
+
+model Todo {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean   @default(false)
+  dueDate     DateTime? @map("due_date")
+  priority    Int       @default(0)
+  listId      String    @map("list_id")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  list        List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("todos")
+}
+
+model ListShare {
+  id         String   @id @default(uuid())
+  listId     String   @map("list_id")
+  userId     String   @map("user_id")
+  permission String   @default("read") // "read" or "write"
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  list       List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@map("list_shares")
 }
