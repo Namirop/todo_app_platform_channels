@@ -8,7 +8,8 @@ import { defineConfig } from 'prisma/config';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-const databaseUrl = process.env['DATABASE_URL'] || 'postgresql://todoapp:123@localhost:5432/todoapp';
+const databaseUrl =
+  process.env['DATABASE_URL'] || 'postgresql://todoapp:123@localhost:5432/todoapp';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

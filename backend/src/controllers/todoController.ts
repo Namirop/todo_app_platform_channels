@@ -1,10 +1,11 @@
+import type { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database.js';
 
 // Get all todos for the authenticated user (from owned and shared lists)
-export const getTodos = async (req, res, next) => {
+export const getTodos = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { listId } = req.params;
+    const userId = req.user!.userId;
+    const listId = req.params.listId as string | undefined;
 
     // Get all list IDs the user has access to
     const ownedLists = await prisma.list.findMany({
@@ -19,14 +20,15 @@ export const getTodos = async (req, res, next) => {
 
     const accessibleListIds = [...ownedLists.map((l) => l.id), ...sharedLists.map((s) => s.listId)];
 
-    const whereClause = {
+    const whereClause: { listId: string | { in: string[] } } = {
       listId: { in: accessibleListIds },
     };
 
     // Filter by specific list if provided
     if (listId) {
       if (!accessibleListIds.includes(listId)) {
-        return res.status(403).json({ error: 'Access denied to this list' });
+        res.status(403).json({ error: 'Access denied to this list' });
+        return;
       }
       whereClause.listId = listId;
     }
@@ -48,10 +50,10 @@ export const getTodos = async (req, res, next) => {
 };
 
 // Get a single todo by ID
-export const getTodo = async (req, res, next) => {
+export const getTodo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { id } = req.params;
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
 
     const todo = await prisma.todo.findUnique({
       where: { id },
@@ -63,7 +65,8 @@ export const getTodo = async (req, res, next) => {
     });
 
     if (!todo) {
-      return res.status(404).json({ error: 'Todo not found' });
+      res.status(404).json({ error: 'Todo not found' });
+      return;
     }
 
     // Check access
@@ -74,7 +77,8 @@ export const getTodo = async (req, res, next) => {
       }));
 
     if (!hasAccess) {
-      return res.status(403).json({ error: 'Access denied' });
+      res.status(403).json({ error: 'Access denied' });
+      return;
     }
 
     res.json(todo);
@@ -84,13 +88,18 @@ export const getTodo = async (req, res, next) => {
 };
 
 // Create a new todo
-export const createTodo = async (req, res, next) => {
+export const createTodo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const { title, description, dueDate, priority, listId } = req.body;
 
     if (!title) {
-      return res.status(400).json({ error: 'Title is required' });
+      res.status(400).json({ error: 'Title is required' });
+      return;
     }
 
     // If no listId provided, use the user's default list
@@ -102,7 +111,8 @@ export const createTodo = async (req, res, next) => {
       });
 
       if (!defaultList) {
-        return res.status(400).json({ error: 'No list found. Please create a list first.' });
+        res.status(400).json({ error: 'No list found. Please create a list first.' });
+        return;
       }
       targetListId = defaultList.id;
     }
@@ -113,7 +123,8 @@ export const createTodo = async (req, res, next) => {
     });
 
     if (!list) {
-      return res.status(404).json({ error: 'List not found' });
+      res.status(404).json({ error: 'List not found' });
+      return;
     }
 
     const isOwner = list.ownerId === userId;
@@ -123,7 +134,8 @@ export const createTodo = async (req, res, next) => {
     const hasWriteAccess = isOwner || (share && share.permission === 'write');
 
     if (!hasWriteAccess) {
-      return res.status(403).json({ error: 'Write access denied to this list' });
+      res.status(403).json({ error: 'Write access denied to this list' });
+      return;
     }
 
     const todo = await prisma.todo.create({
@@ -149,10 +161,14 @@ export const createTodo = async (req, res, next) => {
 };
 
 // Update a todo
-export const updateTodo = async (req, res, next) => {
+export const updateTodo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { id } = req.params;
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
     const { title, description, completed, dueDate, priority } = req.body;
 
     const existingTodo = await prisma.todo.findUnique({
@@ -161,7 +177,8 @@ export const updateTodo = async (req, res, next) => {
     });
 
     if (!existingTodo) {
-      return res.status(404).json({ error: 'Todo not found' });
+      res.status(404).json({ error: 'Todo not found' });
+      return;
     }
 
     // Check write access
@@ -172,10 +189,17 @@ export const updateTodo = async (req, res, next) => {
     const hasWriteAccess = isOwner || (share && share.permission === 'write');
 
     if (!hasWriteAccess) {
-      return res.status(403).json({ error: 'Write access denied' });
+      res.status(403).json({ error: 'Write access denied' });
+      return;
     }
 
-    const updateData = {};
+    const updateData: {
+      title?: string;
+      description?: string;
+      completed?: boolean;
+      dueDate?: Date | null;
+      priority?: number;
+    } = {};
     if (title !== undefined) {
       updateData.title = title;
     }
@@ -209,10 +233,14 @@ export const updateTodo = async (req, res, next) => {
 };
 
 // Delete a todo
-export const deleteTodo = async (req, res, next) => {
+export const deleteTodo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { id } = req.params;
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
 
     const existingTodo = await prisma.todo.findUnique({
       where: { id },
@@ -220,7 +248,8 @@ export const deleteTodo = async (req, res, next) => {
     });
 
     if (!existingTodo) {
-      return res.status(404).json({ error: 'Todo not found' });
+      res.status(404).json({ error: 'Todo not found' });
+      return;
     }
 
     // Check write access
@@ -231,7 +260,8 @@ export const deleteTodo = async (req, res, next) => {
     const hasWriteAccess = isOwner || (share && share.permission === 'write');
 
     if (!hasWriteAccess) {
-      return res.status(403).json({ error: 'Write access denied' });
+      res.status(403).json({ error: 'Write access denied' });
+      return;
     }
 
     await prisma.todo.delete({

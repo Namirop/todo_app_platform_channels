@@ -1,15 +1,18 @@
 import eslintPluginPrettier from 'eslint-plugin-prettier';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['node_modules/**', 'generated/**'],
+    ignores: ['node_modules/**', 'generated/**', 'dist/**'],
   },
   {
-    files: ['**/*.js'],
+    files: ['**/*.ts'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
+      parser: tsparser,
       globals: {
         console: 'readonly',
         process: 'readonly',
@@ -22,11 +25,12 @@ export default [
     },
     plugins: {
       prettier: eslintPluginPrettier,
+      '@typescript-eslint': tseslint,
     },
     rules: {
       ...eslintConfigPrettier.rules,
       'prettier/prettier': 'error',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': 'off',
       eqeqeq: ['error', 'always'],
       curly: ['error', 'all'],

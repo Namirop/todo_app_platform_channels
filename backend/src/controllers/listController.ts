@@ -1,8 +1,9 @@
+import type { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database.js';
 
-export const getLists = async (req, res, next) => {
+export const getLists = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
 
     const ownedLists = await prisma.list.findMany({
       where: { ownerId: userId },
@@ -38,7 +39,7 @@ export const getLists = async (req, res, next) => {
       updatedAt: list.updatedAt,
       isShared: false,
       permission: 'write',
-      ownerName: req.user.name,
+      ownerName: req.user!.name,
       todosCount: list._count.todos,
     }));
 
@@ -63,13 +64,18 @@ export const getLists = async (req, res, next) => {
   }
 };
 
-export const createList = async (req, res, next) => {
+export const createList = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const { name } = req.body;
 
     if (!name) {
-      return res.status(400).json({ error: 'Title is required' });
+      res.status(400).json({ error: 'Title is required' });
+      return;
     }
 
     const list = await prisma.list.create({
@@ -85,21 +91,27 @@ export const createList = async (req, res, next) => {
   }
 };
 
-export const deleteList = async (req, res, next) => {
+export const deleteList = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { listId } = req.params;
+    const userId = req.user!.userId;
+    const listId = req.params.listId as string;
 
     const existingList = await prisma.list.findUnique({
-      where: { listId },
+      where: { id: listId },
     });
 
     if (!existingList) {
-      return res.status(404).json({ error: 'List not found' });
+      res.status(404).json({ error: 'List not found' });
+      return;
     }
 
     if (existingList.ownerId !== userId) {
-      return res.status(404).json({ error: 'You are not the owner of the list' });
+      res.status(404).json({ error: 'You are not the owner of the list' });
+      return;
     }
 
     await prisma.list.delete({
@@ -112,17 +124,29 @@ export const deleteList = async (req, res, next) => {
   }
 };
 
-export const shareList = async (req, res, next) => {
+interface ShareInput {
+  email: string;
+  permission: string;
+}
+
+interface ShareResult {
+  name?: string;
+  success: boolean;
+  error?: string;
+}
+
+export const shareList = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { listId } = req.params;
-    const { shares } = req.body;
+    const userId = req.user!.userId;
+    const listId = req.params.listId as string;
+    const { shares } = req.body as { shares: ShareInput[] };
 
     if (!shares || !Array.isArray(shares) || shares.length === 0) {
       console.warn(`[WARN] Invalid shares data from user ${userId}`);
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Données invalides',
       });
+      return;
     }
 
     const results = await prisma.$transaction(async (tx) => {
@@ -140,11 +164,11 @@ export const shareList = async (req, res, next) => {
       console.log(`[INFO] Sharing list ${listId} with ${shares.length} users`);
 
       return Promise.all(
-        shares.map(async ({ email, permission }) => {
+        shares.map(async ({ email, permission }): Promise<ShareResult> => {
           try {
             const targetUser = await tx.user.findUnique({
               where: { email },
-              select: { name: true },
+              select: { id: true, name: true },
             });
 
             if (!targetUser) {
@@ -188,31 +212,36 @@ export const shareList = async (req, res, next) => {
     res.json({ successCount, failures }); // Only return the fails
   } catch (err) {
     console.error('[ERROR] shareList error:', err);
-    if (err.message === 'Liste introuvable') {
-      return res.status(404).json({ error: err.message });
-    }
-    if (err.message === "Vous n'êtes pas propriétaire de cette liste") {
-      return res.status(403).json({ error: err.message });
+    if (err instanceof Error) {
+      if (err.message === 'Liste introuvable') {
+        res.status(404).json({ error: err.message });
+        return;
+      }
+      if (err.message === "Vous n'êtes pas propriétaire de cette liste") {
+        res.status(403).json({ error: err.message });
+        return;
+      }
     }
     next(err);
   }
 };
 
-export const leaveList = async (req, res, next) => {
+export const leaveList = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user.userId;
-    const { listId } = req.params;
+    const userId = req.user!.userId;
+    const listId = req.params.listId as string;
 
     const existingList = await prisma.list.findUnique({
-      where: { listId },
+      where: { id: listId },
     });
 
     if (!existingList) {
-      return res.status(404).json({ error: 'List not found' });
+      res.status(404).json({ error: 'List not found' });
+      return;
     }
 
     await prisma.listShare.delete({
-      where: { listId: listId, userId: userId },
+      where: { listId_userId: { listId, userId } },
     });
 
     res.status(201).json();
