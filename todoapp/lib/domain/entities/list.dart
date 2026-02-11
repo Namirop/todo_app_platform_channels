@@ -7,6 +7,7 @@ class ListEntity {
   final bool isShared;
   final String? permission;
   final String? ownerName;
+  final String? ownerMail;
   final int todosCount;
 
   const ListEntity({
@@ -18,6 +19,7 @@ class ListEntity {
     required this.isShared,
     required this.permission,
     required this.ownerName,
+    required this.ownerMail,
     required this.todosCount,
   });
 
@@ -32,6 +34,7 @@ class ListEntity {
     bool? isShared,
     String? permission,
     String? ownerName,
+    String? ownerMail,
     int? todoCount,
   }) {
     return ListEntity(
@@ -43,6 +46,7 @@ class ListEntity {
       isShared: isShared ?? this.isShared,
       permission: permission,
       ownerName: ownerName,
+      ownerMail: ownerMail,
       todosCount: todoCount ?? todosCount,
     );
   }

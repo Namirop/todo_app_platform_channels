@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   backend:
@@ -13,11 +13,18 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "22"
       - name: Install deps
         run: cd backend && npm ci
+
+      # Vérifie le formatage
+      - name: Check format
+        run: cd backend && npm run format:check
+
+      # Vérifie les erreurs ESLint
       - name: Lint
         run: cd backend && npm run lint
+
       - name: Tests
         run: cd backend && npm test
 
@@ -25,12 +32,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
+          flutter-version: "3.27.0" # Version stable actuelle
+
       - name: Install deps
         run: cd todoapp && flutter pub get
+
+      # Vérifie le formatage Dart
+      - name: Check format
+        run: cd todoapp && dart format --set-exit-if-changed . # fail si code mal formaté
+
+      # Analyse statique
       - name: Analyze
         run: cd todoapp && flutter analyze
+
+      # Tests
       - name: Tests
         run: cd todoapp && flutter test

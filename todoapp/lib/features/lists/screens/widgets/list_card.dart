@@ -14,7 +14,10 @@ class ListCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: () => context.push('/lists/${list.id}/todos'),
+      onTap: () {
+        print("ID LIST : ${list.id}");
+        context.push('/lists/${list.id}/todos', extra: list);
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.all(12),
@@ -64,18 +67,35 @@ class ListCard extends ConsumerWidget {
             Row(
               children: [
                 if (list.isShared) ...[
-                  Icon(Icons.people_outline, size: 16, color: Colors.grey[600]),
+                  SizedBox(
+                    height: 30,
+                    child: CircleAvatar(
+                      backgroundImage: NetworkImage(
+                        'https://api.dicebear.com/7.x/avataaars/png?seed=${list.ownerMail}',
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 4),
                   Text(
-                    'Partagée',
+                    'Partagée par ',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                  Text(
+                    list.ownerName!,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+
                   const SizedBox(width: 16),
                 ],
                 Icon(Icons.task_alt, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Text(
                   '${list.todosCount} tâche${list.todosCount > 1 ? 's' : ''}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  list.permission!,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],

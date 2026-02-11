@@ -6,7 +6,8 @@ import 'package:intl/intl.dart';
 import '../providers/todos_provider.dart';
 
 class CreateTodoScreen extends ConsumerStatefulWidget {
-  const CreateTodoScreen({super.key});
+  final String listId;
+  const CreateTodoScreen({super.key, required this.listId});
 
   @override
   ConsumerState<CreateTodoScreen> createState() => _CreateTodoScreenState();
@@ -16,7 +17,6 @@ class _CreateTodoScreenState extends ConsumerState<CreateTodoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   DateTime? _selectedDate;
-  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -42,26 +42,19 @@ class _CreateTodoScreenState extends ConsumerState<CreateTodoScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSubmitting = true);
-
-    final success = await ref
+    await ref
         .read(todosProvider.notifier)
         .createTodo(
           title: _titleController.text.trim(),
           dueDate: _selectedDate,
+          listId: widget.listId,
         );
 
-    setState(() => _isSubmitting = false);
+    if (!mounted) return;
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tâche créée avec succès'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      context.pop();
-    } else if (mounted) {
+    final todosState = ref.read(todosProvider);
+
+    if (todosState.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -71,6 +64,14 @@ class _CreateTodoScreenState extends ConsumerState<CreateTodoScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tâche créée avec succès'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      context.pop();
     }
   }
 
@@ -251,13 +252,14 @@ class _CreateTodoScreenState extends ConsumerState<CreateTodoScreen> {
   }
 
   Widget _buildCreationButton() {
+    final todosState = ref.read(todosProvider);
     return Padding(
       padding: const EdgeInsets.all(20),
       child: SizedBox(
         width: double.infinity,
         height: 56,
         child: ElevatedButton(
-          onPressed: _isSubmitting ? null : _submit,
+          onPressed: todosState.isSubmitting ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1E3A5F),
             foregroundColor: Colors.white,
@@ -266,7 +268,7 @@ class _CreateTodoScreenState extends ConsumerState<CreateTodoScreen> {
             ),
             elevation: 0,
           ),
-          child: _isSubmitting
+          child: todosState.isSubmitting
               ? const SizedBox(
                   height: 24,
                   width: 24,

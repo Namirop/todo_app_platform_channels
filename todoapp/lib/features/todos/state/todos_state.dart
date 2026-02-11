@@ -2,20 +2,28 @@ import '../../../domain/entities/todo.dart';
 
 class TodosState {
   final List<TodoEntity> todos;
+  final bool isSubmitting;
   final bool isLoading;
   final String? error;
 
-  const TodosState({this.todos = const [], this.isLoading = false, this.error});
+  const TodosState({
+    this.todos = const [],
+    this.isLoading = false,
+    this.isSubmitting = false,
+    this.error,
+  });
 
   TodosState copyWith({
     List<TodoEntity>? todos,
     bool? isLoading,
+    bool? isSubmitting,
     String? error,
     bool clearError = false,
   }) {
     return TodosState(
       todos: todos ?? this.todos,
       isLoading: isLoading ?? this.isLoading,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
       error: clearError ? null : (error ?? this.error),
     );
   }

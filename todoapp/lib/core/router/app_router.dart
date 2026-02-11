@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:todoapp/domain/entities/list.dart';
 import 'package:todoapp/features/lists/screens/create_list_screen.dart';
 import 'package:todoapp/features/lists/screens/lists_screen.dart';
 import 'package:todoapp/features/lists/screens/share_screen.dart';
@@ -54,25 +55,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CreateListScreen(),
       ),
       GoRoute(
-        path: '/lists/:id/share',
+        path: '/lists/:listId/share',
         name: 'share',
         builder: (context, state) {
-          final listId = state.pathParameters['id']!;
+          final listId = state.pathParameters['listId']!;
           return ShareScreen(listId: listId);
         },
       ),
       GoRoute(
-        path: '/lists/:id/todos',
+        path: '/lists/:listId/todos',
         name: 'todos',
         builder: (context, state) {
-          final listId = state.pathParameters['id']!;
-          return TodosScreen(listId: listId);
+          final listId = state.pathParameters['listId']!;
+          final list = state.extra as ListEntity;
+          return TodosScreen(listId: listId, list: list);
         },
       ),
       GoRoute(
-        path: '/todos/create',
+        path: '/todos/:listId/create',
         name: 'createTodo',
-        builder: (context, state) => const CreateTodoScreen(),
+        builder: (context, state) {
+          final listId = state.pathParameters['listId']!;
+          return CreateTodoScreen(listId: listId);
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

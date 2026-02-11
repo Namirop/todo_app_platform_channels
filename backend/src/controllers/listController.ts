@@ -51,7 +51,8 @@ export const getLists = async (req: Request, res: Response, next: NextFunction):
       updatedAt: share.list.updatedAt,
       isShared: true,
       permission: share.permission,
-      ownerName: share.list.owner.name || share.list.owner.email,
+      ownerName: share.list.owner.name || share.list.owner.email.split('@')[0],
+      ownerMail: share.list.owner.email,
       todosCount: share.list._count.todos,
     }));
 
@@ -85,7 +86,7 @@ export const createList = async (
       },
     });
 
-    res.status(201).json(list);
+    res.status(200).json(list);
   } catch (err) {
     next(err);
   }

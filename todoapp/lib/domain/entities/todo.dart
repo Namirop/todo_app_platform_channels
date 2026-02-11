@@ -25,7 +25,6 @@ class TodoEntity {
     this.list,
   });
 
-  // Business logic helpers
   bool get isOverdue =>
       dueDate != null && !completed && dueDate!.isBefore(DateTime.now());
 

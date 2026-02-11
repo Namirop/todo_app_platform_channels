@@ -30,10 +30,6 @@ class _ListsScreenState extends ConsumerState<ListsScreen> {
       appBar: AppBar(
         title: const Text('Mes listes'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(listsProvider.notifier).refresh(),
-          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {
@@ -45,7 +41,11 @@ class _ListsScreenState extends ConsumerState<ListsScreen> {
               PopupMenuItem(
                 value: 'profile',
                 child: ListTile(
-                  leading: const Icon(Icons.person),
+                  leading: CircleAvatar(
+                    backgroundImage: NetworkImage(
+                      'https://api.dicebear.com/7.x/avataaars/png?seed=${authState.user!.email}',
+                    ),
+                  ),
                   title: Text(
                     authState.user?.name ??
                         authState.user?.email ??
@@ -131,9 +131,12 @@ class _ListsScreenState extends ConsumerState<ListsScreen> {
             ...state.ownedLists.map((list) => ListCard(list: list)),
           const SizedBox(height: 24),
           if (state.sharedLists.isNotEmpty) ...[
-            Text(
-              'Partagées avec moi',
-              style: Theme.of(context).textTheme.titleLarge,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Partagées avec moi :',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             ...state.sharedLists.map((list) => ListCard(list: list)),
           ],

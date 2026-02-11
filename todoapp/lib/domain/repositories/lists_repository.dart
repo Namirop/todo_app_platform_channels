@@ -12,7 +12,6 @@ abstract class ListsRepository {
   Future<ListEntity> createList(String name);
   Future<ListEntity> updateList(String id, {String? name});
   Future<void> deleteList(String id);
-  Future<void> refreshLists();
   Future<ShareResult> shareList(
     String listId,
     List<Map<String, String>> shares,

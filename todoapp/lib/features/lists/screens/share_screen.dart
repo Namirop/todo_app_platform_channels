@@ -228,9 +228,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
 
   Future<void> _share() async {
     final shares = _selectedUsers.entries
-        .map(
-          (entry) => {'email': "tom-${entry.key}", 'permission': entry.value},
-        )
+        .map((entry) => {'email': entry.key, 'permission': entry.value})
         .toList();
 
     await ref.read(shareProvider.notifier).shareList(widget.listId, shares);
@@ -247,7 +245,7 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
       return;
     }
 
-    if (state.shareResult != null) {
+    if (state.hasShared) {
       if (state.shareResult!.failures.isEmpty) {
         context.go('/lists');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -297,13 +295,6 @@ class _ShareScreenState extends ConsumerState<ShareScreen> {
                                   failure.name,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  failure.name,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
                                   ),
                                 ),
                                 Text(

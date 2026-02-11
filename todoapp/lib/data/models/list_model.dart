@@ -9,6 +9,7 @@ class ListModel {
   final bool isShared;
   final String? permission;
   final String? ownerName;
+  final String? ownerMail;
   final int todosCount;
 
   const ListModel({
@@ -20,6 +21,7 @@ class ListModel {
     this.isShared = false,
     this.permission = 'write',
     this.ownerName,
+    this.ownerMail,
     required this.todosCount,
   });
 
@@ -33,6 +35,7 @@ class ListModel {
       isShared: json['isShared'] as bool? ?? false,
       permission: json['permission'] as String? ?? 'write',
       ownerName: json['ownerName'] as String? ?? 'n/a',
+      ownerMail: json['ownerMail'] as String? ?? 'n/a',
       todosCount: json['todosCount'] as int? ?? 0,
     );
   }
@@ -47,6 +50,7 @@ class ListModel {
       'isShared': isShared,
       if (permission != null) 'permission': permission,
       if (ownerName != null) 'ownerName': ownerName,
+      if (ownerMail != null) 'ownerMail': ownerMail,
       'todosCount': todosCount,
     };
   }
@@ -61,6 +65,7 @@ class ListModel {
       isShared: isShared,
       permission: permission,
       ownerName: ownerName,
+      ownerMail: ownerMail,
       todosCount: todosCount,
     );
   }
@@ -75,6 +80,7 @@ class ListModel {
       isShared: entity.isShared,
       permission: entity.permission,
       ownerName: entity.ownerName,
+      ownerMail: entity.ownerMail,
       todosCount: entity.todosCount,
     );
   }
@@ -88,6 +94,7 @@ class ListModel {
     bool? isShared,
     String? permission,
     String? ownerName,
+    String? ownerMail,
     int? todosCount,
   }) {
     return ListModel(
@@ -99,6 +106,7 @@ class ListModel {
       isShared: isShared ?? this.isShared,
       permission: permission ?? this.permission,
       ownerName: ownerName ?? this.ownerName,
+      ownerMail: ownerMail ?? this.ownerMail,
       todosCount: todosCount ?? this.todosCount,
     );
   }

@@ -7,7 +7,6 @@ export const getTodos = async (req: Request, res: Response, next: NextFunction):
     const userId = req.user!.userId;
     const listId = req.params.listId as string | undefined;
 
-    // Get all list IDs the user has access to
     const ownedLists = await prisma.list.findMany({
       where: { ownerId: userId },
       select: { id: true },
@@ -24,7 +23,6 @@ export const getTodos = async (req: Request, res: Response, next: NextFunction):
       listId: { in: accessibleListIds },
     };
 
-    // Filter by specific list if provided
     if (listId) {
       if (!accessibleListIds.includes(listId)) {
         res.status(403).json({ error: 'Access denied to this list' });
@@ -49,7 +47,6 @@ export const getTodos = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
-// Get a single todo by ID
 export const getTodo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user!.userId;
@@ -69,7 +66,6 @@ export const getTodo = async (req: Request, res: Response, next: NextFunction): 
       return;
     }
 
-    // Check access
     const hasAccess =
       todo.list.ownerId === userId ||
       (await prisma.listShare.findUnique({
@@ -87,7 +83,6 @@ export const getTodo = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
-// Create a new todo
 export const createTodo = async (
   req: Request,
   res: Response,
@@ -102,8 +97,9 @@ export const createTodo = async (
       return;
     }
 
-    // If no listId provided, use the user's default list
+    // If no listId provided, use the user's default list (first created)
     let targetListId = listId;
+
     if (!targetListId) {
       const defaultList = await prisma.list.findFirst({
         where: { ownerId: userId },
@@ -117,7 +113,6 @@ export const createTodo = async (
       targetListId = defaultList.id;
     }
 
-    // Check write access to the list
     const list = await prisma.list.findUnique({
       where: { id: targetListId },
     });
@@ -126,6 +121,9 @@ export const createTodo = async (
       res.status(404).json({ error: 'List not found' });
       return;
     }
+
+    console.log('list owner : ' + list.ownerId);
+    console.log('userId :' + userId);
 
     const isOwner = list.ownerId === userId;
     const share = await prisma.listShare.findUnique({
@@ -160,7 +158,6 @@ export const createTodo = async (
   }
 };
 
-// Update a todo
 export const updateTodo = async (
   req: Request,
   res: Response,
@@ -181,7 +178,6 @@ export const updateTodo = async (
       return;
     }
 
-    // Check write access
     const isOwner = existingTodo.list.ownerId === userId;
     const share = await prisma.listShare.findUnique({
       where: { listId_userId: { listId: existingTodo.listId, userId } },
@@ -232,7 +228,6 @@ export const updateTodo = async (
   }
 };
 
-// Delete a todo
 export const deleteTodo = async (
   req: Request,
   res: Response,
@@ -252,7 +247,6 @@ export const deleteTodo = async (
       return;
     }
 
-    // Check write access
     const isOwner = existingTodo.list.ownerId === userId;
     const share = await prisma.listShare.findUnique({
       where: { listId_userId: { listId: existingTodo.listId, userId } },

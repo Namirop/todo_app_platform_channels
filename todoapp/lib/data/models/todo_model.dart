@@ -42,7 +42,9 @@ class TodoModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       list: json['list'] != null
-          ? TodoListInfoModel.fromJson(json['list'] as Map<String, dynamic>)
+          ? TodoListInfoModel.fromJson(
+              Map<String, dynamic>.from(json['list'] as Map),
+            )
           : null,
     );
   }

@@ -9,7 +9,7 @@ abstract class TodosRepository {
     String? description,
     DateTime? dueDate,
     int priority = 0,
-    String? listId,
+    required String listId,
   });
   Future<TodoEntity> updateTodo(
     String id, {
@@ -20,5 +20,4 @@ abstract class TodosRepository {
     int? priority,
   });
   Future<void> deleteTodo(String id);
-  Future<void> refreshTodos({String? listId});
 }

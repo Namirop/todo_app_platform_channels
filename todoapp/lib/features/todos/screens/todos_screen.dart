@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:todoapp/domain/entities/list.dart';
 import 'package:todoapp/features/lists/providers/lists_provider.dart';
 import 'package:todoapp/features/todos/screens/widgets/todo_tile.dart';
 
@@ -11,7 +12,8 @@ import '../state/todos_state.dart';
 
 class TodosScreen extends ConsumerStatefulWidget {
   final String listId;
-  const TodosScreen({super.key, required this.listId});
+  final ListEntity list;
+  const TodosScreen({super.key, required this.listId, required this.list});
 
   @override
   ConsumerState<TodosScreen> createState() => _ListScreenState();
@@ -32,12 +34,15 @@ class _ListScreenState extends ConsumerState<TodosScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            ref.read(listsProvider.notifier).fetchLists();
+            context.pop();
+          },
+        ),
         title: const Text('Mes Tâches'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(todosProvider.notifier).refresh(),
-          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'share') {
@@ -52,9 +57,10 @@ class _ListScreenState extends ConsumerState<TodosScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
+                enabled: !widget.list.isShared,
                 value: 'share',
-                child: ListTile(
+                child: const ListTile(
                   leading: Icon(Icons.person),
                   title: Text("Partager la liste"),
                   contentPadding: EdgeInsets.zero,
@@ -77,7 +83,10 @@ class _ListScreenState extends ConsumerState<TodosScreen> {
       ),
       body: _buildBody(todosState),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/todos/create'),
+        onPressed: widget.list.permission == "read"
+            ? null
+            : () => context.push('/todos/${widget.listId}/create'),
+        backgroundColor: widget.list.permission == "read" ? Colors.grey : null,
         icon: const Icon(Icons.add),
         label: const Text('Nouvelle tâche'),
       ),

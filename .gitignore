@@ -25,3 +25,7 @@ Thumbs.db
 *.key
 .env*
 !.env.example
+
+# Claude Code
+.claude/
+CLAUDE.md

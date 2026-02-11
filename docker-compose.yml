@@ -1,15 +1,15 @@
-version: '3.8'
+version: "3.8"
 services:
-    postgres:
-        image: postgres:15-alpine
-        environment:
-            POSTGRES_USER: todoapp
-            POSTGRES_PASSWORD: dev_password
-            POSTGRES_DB: todoapp
-        ports:
-            - "5432:5432"
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: todoapp
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: todoapp
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-    postgres_data:
+  postgres_data:
