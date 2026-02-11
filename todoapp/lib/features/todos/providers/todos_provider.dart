@@ -16,7 +16,6 @@ final todosProvider = StateNotifierProvider<TodosNotifier, TodosState>((ref) {
 class TodosNotifier extends StateNotifier<TodosState> {
   final TodosRepository _todosRepository;
   StreamSubscription<List<TodoEntity>>? _subscription;
-  String? _currentListId;
 
   TodosNotifier(this._todosRepository) : super(const TodosState());
 
@@ -27,31 +26,26 @@ class TodosNotifier extends StateNotifier<TodosState> {
   }
 
   void watchTodos({String? listId}) {
-    _currentListId = listId;
     _subscription?.cancel();
 
     state = state.copyWith(isLoading: true, clearError: true);
 
-    _subscription = _todosRepository
-        .watchTodos(listId: listId)
-        .listen(
-          (todos) {
-            state = state.copyWith(todos: todos, isLoading: false);
-          },
-          onError: (error, stackTrace) {
-            if (error is ServerException) {
-              state = state.copyWith(isLoading: false, error: error.message);
-            } else if (error is NetworkException) {
-              state = state.copyWith(isLoading: false, error: error.message);
-            } else {
-              debugPrint('watchTodos error: $error\n$stackTrace');
-              state = state.copyWith(
-                isLoading: false,
-                error: 'Une erreur est survenue',
-              );
-            }
-          },
-        );
+    _subscription = _todosRepository.watchTodos(listId: listId).listen(
+      (todos) {
+        state = state.copyWith(todos: todos, isLoading: false);
+      },
+      onError: (error, stackTrace) {
+        if (error is AppException) {
+          state = state.copyWith(isLoading: false, error: error.message);
+        } else {
+          debugPrint('watchTodos error: $error\n$stackTrace');
+          state = state.copyWith(
+            isLoading: false,
+            error: 'Une erreur est survenue',
+          );
+        }
+      },
+    );
   }
 
   Future<void> fetchTodos(String listId) async {
@@ -60,9 +54,7 @@ class TodosNotifier extends StateNotifier<TodosState> {
     try {
       final todos = await _todosRepository.getTodos(listId);
       state = state.copyWith(todos: todos, isLoading: false);
-    } on ServerException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(isLoading: false, error: e.message);
     } catch (e, stackTrace) {
       debugPrint('fetchTodos error: $e\n$stackTrace');
@@ -73,15 +65,16 @@ class TodosNotifier extends StateNotifier<TodosState> {
     }
   }
 
-  Future<bool> createTodo({
+  Future<void> createTodo({
     required String title,
     String? description,
     DateTime? dueDate,
     int priority = 0,
-    String? listId,
+    required String listId,
   }) async {
+    state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      final newTodo = await _todosRepository.createTodo(
+      final todo = await _todosRepository.createTodo(
         title: title,
         description: description,
         dueDate: dueDate,
@@ -89,18 +82,17 @@ class TodosNotifier extends StateNotifier<TodosState> {
         listId: listId,
       );
 
-      state = state.copyWith(todos: [newTodo, ...state.todos]);
-      return true;
-    } on ServerException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } on NetworkException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } catch (e, stackTrace) {
-      debugPrint('createTodo error: $e\n$stackTrace');
-      state = state.copyWith(error: 'Une erreur est survenue');
-      return false;
+      state = state.copyWith(
+        todos: [...state.todos, todo],
+        isSubmitting: false,
+      );
+    } on AppException catch (e) {
+      state = state.copyWith(error: e.message, isSubmitting: false);
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Une erreur est survenue',
+        isSubmitting: false,
+      );
     }
   }
 
@@ -126,10 +118,7 @@ class TodosNotifier extends StateNotifier<TodosState> {
         todos: state.todos.map((t) => t.id == id ? updatedTodo : t).toList(),
       );
       return true;
-    } on ServerException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(error: e.message);
       return false;
     } catch (e, stackTrace) {
@@ -163,24 +152,13 @@ class TodosNotifier extends StateNotifier<TodosState> {
         todos: state.todos.where((t) => t.id != id).toList(),
       );
       return true;
-    } on ServerException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(error: e.message);
       return false;
     } catch (e, stackTrace) {
       debugPrint('deleteTodo error: $e\n$stackTrace');
       state = state.copyWith(error: 'Une erreur est survenue');
       return false;
-    }
-  }
-
-  Future<void> refresh() async {
-    try {
-      await _todosRepository.refreshTodos(listId: _currentListId);
-    } catch (e, stackTrace) {
-      debugPrint('refreshTodos error: $e\n$stackTrace');
     }
   }
 

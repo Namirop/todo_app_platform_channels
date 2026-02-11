@@ -91,10 +91,10 @@ class TodosRepositoryImpl implements TodosRepository {
     String? description,
     DateTime? dueDate,
     int priority = 0,
-    String? listId,
+    required String listId,
   }) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     final remote = await _remoteDataSource.createTodo(
@@ -118,7 +118,7 @@ class TodosRepositoryImpl implements TodosRepository {
     int? priority,
   }) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     final remote = await _remoteDataSource.updateTodo(
@@ -136,20 +136,10 @@ class TodosRepositoryImpl implements TodosRepository {
   @override
   Future<void> deleteTodo(String id) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     await _remoteDataSource.deleteTodo(id);
     await _localDataSource.deleteTodo(id);
-  }
-
-  @override
-  Future<void> refreshTodos({String? listId}) async {
-    if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
-    }
-
-    final remote = await _remoteDataSource.getTodos(listId!);
-    await _localDataSource.cacheTodos(remote, listId: listId);
   }
 }

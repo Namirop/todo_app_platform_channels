@@ -20,21 +20,21 @@ class ShareNotifier extends StateNotifier<ShareState> {
     state = state.copyWith(isSharing: true, clearResult: true);
     try {
       final results = await _listsRepository.shareList(listId, shares);
-      print("results : ${results.failures.length}");
-      state = state.copyWith(isSharing: false, shareResult: results);
-    } on ValidationException catch (e) {
-      state = state.copyWith(isSharing: false, error: e.message);
-    } on ForbiddenException catch (e) {
-      state = state.copyWith(isSharing: false, error: e.message);
-    } on NotFoundException catch (e) {
-      state = state.copyWith(isSharing: false, error: e.message);
-    } on NetworkException catch (e) {
-      state = state.copyWith(isSharing: false, error: e.message);
-    } on ServerException catch (e) {
-      state = state.copyWith(isSharing: false, error: e.message);
+      state = state.copyWith(
+        isSharing: false,
+        shareResult: results,
+        hasShared: true,
+      );
+    } on AppException catch (e) {
+      state = state.copyWith(
+        isSharing: false,
+        hasShared: false,
+        error: e.message,
+      );
     } catch (e) {
       state = state.copyWith(
         isSharing: false,
+        hasShared: false,
         error: 'Une erreur inattendue est survenue',
       );
     }

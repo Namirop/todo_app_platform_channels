@@ -114,7 +114,7 @@ class ListsRepositoryImpl implements ListsRepository {
   @override
   Future<ListEntity> createList(String name) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     final remote = await _remoteDataSource.createList(name);
@@ -125,7 +125,7 @@ class ListsRepositoryImpl implements ListsRepository {
   @override
   Future<ListEntity> updateList(String id, {String? name}) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     final remote = await _remoteDataSource.updateList(id, name: name);
@@ -136,21 +136,11 @@ class ListsRepositoryImpl implements ListsRepository {
   @override
   Future<void> deleteList(String id) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     await _remoteDataSource.deleteList(id);
     await _localDataSource.deleteList(id);
-  }
-
-  @override
-  Future<void> refreshLists() async {
-    if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
-    }
-
-    final (remoteOwned, remoteShared) = await _remoteDataSource.getLists();
-    await _localDataSource.cacheLists(remoteOwned, remoteShared);
   }
 
   @override
@@ -159,24 +149,17 @@ class ListsRepositoryImpl implements ListsRepository {
     List<Map<String, String>> shares,
   ) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     final remote = await _remoteDataSource.shareList(listId, shares);
-    return ShareResult(
-      successCount: remote['successCount'],
-      failures:
-          (remote['failures'] as List?)
-              ?.map((f) => ShareFailure(name: f['name'], error: f['error']))
-              .toList() ??
-          [],
-    );
+    return remote.toEntity();
   }
 
   @override
   Future<void> removeShare(String listId) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     await _remoteDataSource.removeShare(listId);
@@ -185,7 +168,7 @@ class ListsRepositoryImpl implements ListsRepository {
   @override
   Future<List<ListShare>> getListShares(String listId) async {
     if (!await _networkInfo.isConnected) {
-      throw NetworkException(message: 'Erreur réseau');
+      throw NetworkException(message: 'Connexion internet requise');
     }
 
     final remote = await _remoteDataSource.getListShares(listId);

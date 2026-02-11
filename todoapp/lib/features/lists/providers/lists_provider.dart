@@ -40,9 +40,7 @@ class ListsNotifier extends StateNotifier<ListsState> {
         );
       },
       onError: (error, stackTrace) {
-        if (error is ServerException) {
-          state = state.copyWith(isLoading: false, error: error.message);
-        } else if (error is NetworkException) {
+        if (error is AppException) {
           state = state.copyWith(isLoading: false, error: error.message);
         } else {
           debugPrint('watchLists error: $error\n$stackTrace');
@@ -65,9 +63,7 @@ class ListsNotifier extends StateNotifier<ListsState> {
         sharedLists: shared,
         isLoading: false,
       );
-    } on ServerException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(isLoading: false, error: e.message);
     } catch (e, stackTrace) {
       debugPrint('fetchLists error: $e\n$stackTrace');
@@ -83,10 +79,7 @@ class ListsNotifier extends StateNotifier<ListsState> {
       final newList = await _listsRepository.createList(name);
       state = state.copyWith(ownedLists: [newList, ...state.ownedLists]);
       return true;
-    } on ServerException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(error: e.message);
       return false;
     } catch (e, stackTrace) {
@@ -108,10 +101,7 @@ class ListsNotifier extends StateNotifier<ListsState> {
             .toList(),
       );
       return true;
-    } on ServerException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(error: e.message);
       return false;
     } catch (e, stackTrace) {
@@ -129,24 +119,13 @@ class ListsNotifier extends StateNotifier<ListsState> {
         sharedLists: state.sharedLists.where((l) => l.id != id).toList(),
       );
       return true;
-    } on ServerException catch (e) {
-      state = state.copyWith(error: e.message);
-      return false;
-    } on NetworkException catch (e) {
+    } on AppException catch (e) {
       state = state.copyWith(error: e.message);
       return false;
     } catch (e, stackTrace) {
       debugPrint('deleteList error: $e\n$stackTrace');
       state = state.copyWith(error: 'Une erreur est survenue');
       return false;
-    }
-  }
-
-  Future<void> refresh() async {
-    try {
-      await _listsRepository.refreshLists();
-    } catch (e, stackTrace) {
-      debugPrint('refreshLists error: $e\n$stackTrace');
     }
   }
 

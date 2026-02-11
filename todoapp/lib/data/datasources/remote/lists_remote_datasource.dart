@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:todoapp/data/models/list_share_model.dart';
+import 'package:todoapp/data/models/share_result_model.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/errors/exceptions.dart';
@@ -12,7 +13,7 @@ abstract class ListsRemoteDataSource {
   Future<ListModel> createList(String name);
   Future<ListModel> updateList(String id, {String? name});
   Future<void> deleteList(String id);
-  Future<Map<String, dynamic>> shareList(
+  Future<ShareResultModel> shareList(
     String listId,
     List<Map<String, String>> shares,
   );
@@ -24,6 +25,41 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
   final ApiService _apiService;
 
   ListsRemoteDataSourceImpl(this._apiService);
+
+  Never _handleDioError(DioException e, String defaultMessage) {
+    final statusCode = e.response?.statusCode;
+    final errorMessage = e.response?.data['error'] as String?;
+
+    switch (statusCode) {
+      case 400:
+        throw ValidationException(message: errorMessage ?? 'Données invalides');
+      case 403:
+        throw ForbiddenException(
+          message: errorMessage ?? 'Action non autorisée',
+        );
+      case 404:
+        throw NotFoundException(
+          message: errorMessage ?? 'Ressource introuvable',
+        );
+      case 503:
+        throw ServerException(
+          message: 'Le serveur rencontre un problème, réessayez plus tard',
+          statusCode: statusCode,
+        );
+      default:
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          throw NetworkException(message: 'La connexion a expiré');
+        }
+        if (e.type == DioExceptionType.connectionError) {
+          throw NetworkException(message: 'Impossible de contacter le serveur');
+        }
+        throw ServerException(
+          message: errorMessage ?? defaultMessage,
+          statusCode: statusCode,
+        );
+    }
+  }
 
   @override
   Future<(List<ListModel> ownedLists, List<ListModel> sharedLists)>
@@ -44,10 +80,7 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
 
       return (ownedLists, sharedLists);
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['error'] ?? 'Erreur lors du chargement',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors du chargement des listes');
     }
   }
 
@@ -57,10 +90,7 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
       final response = await _apiService.get('${ApiConstants.lists}/$id');
       return ListModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['error'] ?? 'Liste non trouvée',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors du chargement de la liste');
     }
   }
 
@@ -74,10 +104,7 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
 
       return ListModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['error'] ?? 'Erreur lors de la création',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors de la création');
     }
   }
 
@@ -91,10 +118,7 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
 
       return ListModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['error'] ?? 'Erreur lors de la mise à jour',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors de la mise à jour');
     }
   }
 
@@ -103,15 +127,12 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
     try {
       await _apiService.delete('${ApiConstants.lists}/$id');
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['error'] ?? 'Erreur lors de la suppression',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors de la suppression');
     }
   }
 
   @override
-  Future<Map<String, dynamic>> shareList(
+  Future<ShareResultModel> shareList(
     String listId,
     List<Map<String, String>> shares,
   ) async {
@@ -121,52 +142,9 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
         data: {'shares': shares},
       );
 
-      return response.data as Map<String, dynamic>;
+      return ShareResultModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      print("DioException");
-      final statusCode = e.response?.statusCode;
-      final errorMessage = e.response?.data['error'] as String?;
-
-      switch (statusCode) {
-        case 400:
-          throw ValidationException(
-            message: errorMessage ?? 'Données invalides',
-          );
-
-        case 403:
-          throw ForbiddenException(
-            message: errorMessage ?? 'Vous n\'êtes pas autorisé',
-          );
-
-        case 404:
-          throw NotFoundException(message: errorMessage ?? 'Liste introuvable');
-
-        case 503:
-          throw ServerException(
-            message: 'Le serveur rencontre un problème, réessayez plus tard',
-            statusCode: statusCode,
-          );
-        default:
-          if (e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.receiveTimeout) {
-            throw NetworkException(message: 'La connexion a expiré');
-          }
-
-          if (e.type == DioExceptionType.connectionError) {
-            throw NetworkException(
-              message: 'Impossible de contacter le serveur',
-            );
-          }
-
-          throw ServerException(
-            message: errorMessage ?? 'Une erreur est survenue',
-            statusCode: statusCode,
-          );
-      }
-    } catch (e) {
-      // non-http error (parsing, etc.)
-      print("Unknown error : ${e.toString()}");
-      throw UnknownException(message: e.toString());
+      _handleDioError(e, 'Erreur lors du partage');
     }
   }
 
@@ -175,12 +153,7 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
     try {
       await _apiService.delete('${ApiConstants.lists}/$listId/shares');
     } on DioException catch (e) {
-      throw ServerException(
-        message:
-            e.response?.data['error'] ??
-            'Erreur lors de la suppression du partage',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors de la suppression du partage');
     }
   }
 
@@ -195,10 +168,7 @@ class ListsRemoteDataSourceImpl implements ListsRemoteDataSource {
           .map((json) => ListShareModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['error'] ?? 'Erreur lors du chargement',
-        statusCode: e.response?.statusCode,
-      );
+      _handleDioError(e, 'Erreur lors du chargement des partages');
     }
   }
 }

@@ -17,10 +17,7 @@ class ListsState {
     List<ListEntity>? ownedLists,
     List<ListEntity>? sharedLists,
     bool? isLoading,
-    bool? isSuccessShare,
     String? error,
-    String? successShareCount,
-    String? failShareCount,
     bool clearError = false,
   }) {
     return ListsState(
